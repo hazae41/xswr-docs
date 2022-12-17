@@ -1,0 +1,35 @@
+# Fetch when the browser is online
+
+You can use `useOnline` to fetch a resource when the browser becomes online.
+
+```tsx
+useOnline(query) 
+```
+
+### Example
+
+```tsx
+function useAutoFetchMixture(query: Query) {
+  useFetch(query)
+  useVisible(query)
+  useOnline(query)
+}
+```
+
+### Implementation
+
+```tsx
+export function useOnline(query: Query) {
+  const { fetch } = query
+
+  useEffect(() => {
+    const f = () => fetch()
+    addEventListener("online", f)
+    return () => removeEventListener("online", f)
+  }, [fetch])
+}
+```
+
+### See also
+
+- [useVisible](/features/use-visible) - fetch when the tab is focused

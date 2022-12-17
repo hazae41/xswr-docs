@@ -1,0 +1,59 @@
+# Garbage collection
+
+XSWR automatically delete unused data by doing reference counting and using expiration times.
+
+Basically, a resource is garbage collected if there are no more references to it AND the expiration time has exceeded.
+
+By default, no expiration time is set by XSWR, this means resources are NOT garbage collected by default.
+
+[Persistent storages](/features/storage) also support automatic garbage collection out of the box.
+
+### Resource expiration delay
+
+You can set an expiration delay for all resources in your core provider.
+
+```tsx
+function MyWrapper() {
+  return <XSWR.CoreProvider
+    expiration={60 * 1000}>
+    <MyAwesomeApp />
+  </XSWR.CoreProvider>
+}
+```
+
+Or you can set an expiration delay for some resource.
+
+```tsx
+function getHelloSchema() {
+  return getSingleSchema<Hello>("/api/hello", fetchAsJson, { expiration: 60 * 1000 })
+}
+```
+
+### Response expiration time
+
+You can also set an expiration time directly in your fetcher.
+
+```tsx
+async function fetchAsJson<T>(url: string, more: FetcherMore<T>) {
+  const { signal } = more
+
+  const res = await fetch(url, { signal })
+  const expiration = Date.now() + (60 * 1000)
+
+  if (!res.ok) {
+    const error = new Error(await res.text())
+    return { error, expiration }
+  }
+
+  const data = await res.json() as T
+  return { data, expiration }
+}
+```
+
+For more control, `expiration` is a time, not a delay (you must add `Date.now()` if you use a delay).
+
+You can also use response headers like `Cache-Control` to set the expiration time accordingly.
+
+### Tips
+
+Use an expiration of `-1` to disable expiration.

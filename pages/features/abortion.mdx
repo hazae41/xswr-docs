@@ -1,0 +1,108 @@
+# Cancellable requests
+
+You can cancel requests with AbortControllers.
+
+### Automatic cancellation
+
+Requests are automatically cancelled if their timeout is exceeded (by default 5 seconds).
+
+When using `query.refetch()`, ongoing requests are cancelled.
+
+### Defining a timeout 
+
+You can set an timeout delay for all resources in your core provider.
+
+```tsx
+function MyWrapper() {
+  return <XSWR.CoreProvider
+    timeout={5000}>
+    <MyAwesomeApp />
+  </XSWR.CoreProvider>
+}
+```
+
+Or you can set an timeout delay for some resource.
+
+```tsx
+function getHelloSchema() {
+  return getSingleSchema<Hello>("/api/hello", fetchAsJson, { timeout: 5000 })
+}
+```
+
+## Preparing your fetcher for abortion
+
+You have to prepare your fetcher for abortion in order to abort it on the fly.
+
+You can pass the AbortSignal to your fetcher (e.g. fetch) in order to cancel the request and throw an error when the signal is triggered.
+
+The signal will be passed in the second parameter of your fetcher (`FetcherMore`).
+
+```tsx
+async function fetchAsJson<T>(url: string, more: FetcherMore<T>) {
+  const { signal } = more
+
+  const res = await fetch(url, { signal })
+
+  if (!res.ok) {
+    const error = new Error(await res.text())
+    return { error }
+  }
+
+  const data = await res.json() as T
+  return { data }
+}
+```
+
+You can then ignore AbortErrors in your components.
+
+```tsx
+if (isAbortError(query.error))
+  // do not display the error
+else
+  // display the error
+```
+
+## Aborting using query.aborter
+
+By default, an aborter is created and passed to your query for each request.
+
+You can use `query.aborter.abort` to abort the ongoing request, or `query.aborter.signal` to check the signal.
+
+```tsx
+const mydata = useMyData()
+const { aborter } = mydata
+
+return <button onClick={aborter.abort}>
+  Abort
+<button />
+```
+
+Note: `query.aborter` is `undefined` is there is no ongoing request.
+
+Note: `query.aborter` will only be available after a render, use a custom aborter with a ref if you want instant access.
+
+## Aborting using custom aborter
+
+For more control, you can create your own aborter and store it wherever you like (e.g. is a useRef) and trigger it whenever you like.
+
+```tsx
+function Component() {
+  const mydata = useMyData()
+  const { fetch } = mydata
+
+  const syncAborter = useRef<AbortController>()
+
+  const fetchWithAborter = useCallback(() => {
+    const aborter = new AbortController()
+
+    fetch(aborter)
+
+    // your aborter will be available instantly
+    syncAborter.current = aborter
+  }, [])
+
+  return <>...</>
+}
+```
+
+Note: `query.aborter` will be set to your custom aborter, even for other components in the tree.

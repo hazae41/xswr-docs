@@ -1,0 +1,47 @@
+# Scroll pagination
+
+You can use `getScrollSchema` (or `useScrollQuery`) to scroll through a cursor-based or offset-based resource.
+
+```tsx
+getScrollSchema(scroller, fetcher, cooldown?, timeout?)
+```
+
+```tsx
+useScrollQuery(scroller, fetcher, cooldown?, timeout?)
+```
+
+### Behaviour
+
+`query.scroll()` will fetch the next page.
+
+`query.fetch()` will fetch the first page (next pages will be discarded if the first page changed).
+
+### Scroller function
+
+A scroller function uses the previous page data and returns the next page key.
+
+```tsx
+type Scroller<D = any, K = any> = (previous?: D) => K | undefined
+```
+
+If you use `useScrollQuery`, the scroller must be memoized as it acts like a key, you can create one with a `useCallback` or use a top-level function.
+
+### Cursor-based example
+
+```tsx
+function getHelloSchema() {
+  return getScrollSchema((previous?: MyData) => {
+    if (!previous)
+      return `/api/hello` // <--- no previous data = first page
+    if (!previous.after)
+      return undefined // <--- no after cursor = last page
+    return `/api/hello?after=${previous.after}`
+  }, fetchAsJson)
+}
+
+function useHello() {
+  const query = useQuery(getHelloSchema, [])
+  useFetch(query) // <-- all blocks are compatible
+  return query
+}
+```

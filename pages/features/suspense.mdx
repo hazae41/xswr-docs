@@ -1,0 +1,106 @@
+# React Suspense
+
+Using React Suspense with XSWR is super natural and easy
+
+You just have to replace all your `<Loader />` with `suspend()`
+
+It will suspend until the next state change, where you will choose to throw an error, suspend again, or render your component
+
+Note: Since useEffect doesn't work when suspended, suspend() will automatically run a deduped fetch(), to avoid waiting indefinitely
+
+### Example
+
+A traditional React component...
+
+```tsx
+function Component() {
+  const { data, error } = useData()
+
+  if (error) return <Error />
+
+  if (!data) return <Loader />
+
+  return <div>{JSON.stringify(data)}</div>
+}
+```
+
+...now becomes
+
+```tsx
+function Component() {
+  const { data, error, suspend } = useData()
+
+  // Throw the error
+  if (error) throw error
+
+  // Fetch and suspend until next state change
+  if (!data) throw suspend()
+
+  return <div>{JSON.stringify(data)}</div>
+}
+```
+
+That's it, you have control over when you suspend and when you throw 🚀
+
+## Error handling
+
+Throwing on error is entirely opt-in, you can also show a good old component
+
+```tsx
+function Component() {
+  const { data, error, suspend } = useData()
+
+  // Show the error
+  if (error) return <>Error lol</>
+
+  // Fetch and suspend until next state change
+  if (!data) throw suspend()
+
+  return <div>{JSON.stringify(data)}</div>
+}
+```
+
+If you decide to throw it, you can catch it with an [Error Boundary](https://reactjs.org/docs/error-boundaries.html#gatsby-focus-wrapper).
+
+## Server-Side Rendering
+
+Suspense doesn't work with SSR since the server can't use fetch. Or can it?
+
+You can combine `suspend()` with `useFallback`
+
+```tsx
+function useData(data?: Data) {
+  const query = useQuery(getDataSchema, [])
+  useFallback(query, { data })
+  return query
+}
+
+// Let's assume fallback will always be available on the server
+function Page(props: { data?: Data }) {
+  const { data, suspend } = useData(props.data)
+
+  if (error) throw error
+
+  // No data means we're on the client
+  if (!data) throw suspend()
+
+  return ...
+}
+```
+
+Or use any custom logic to NOT suspend on the server
+
+```tsx
+function Page() {
+  const ssr = useAreWeOnTheServer()
+  const { data, suspend } = useData()
+
+  if (error) throw error
+
+  if (!data && ssr) return <>Hi server</>
+
+  if (!data && !ssr) throw suspend()
+
+  return ...
+}
+```

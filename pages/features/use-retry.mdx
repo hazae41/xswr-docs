@@ -1,0 +1,77 @@
+# Retry on error
+
+You can use `useRetry` to retry on error using the exponential backoff algorithm.
+
+```tsx
+useRetry(query, { init: 1000, base: 2, max: 3 }) 
+```
+
+### About
+
+[Exponential backoff algorithm](https://en.wikipedia.org/wiki/Exponential_backoff) allows you to retry fetching a resource if an error is thrown, but on a increasing interval using a geometric progression.
+
+So basically, it will wait `init * (base ** count)` milliseconds between each retry, where count is the number of retries, until count is equal to max.
+
+### Example
+
+With `{ init: 1000, base: 2, max: 3 }`:
+
+1. First retry will wait `1000 * (2 ** 0) = 1000 ms`
+2. Second retry will wait `1000 * (2 ** 1) = 2000 ms`
+3. Third retry will wait `1000 * (2 ** 2) = 4000 ms`
+
+You can see that the interval is multiplied by 2 (our base) for each retry.
+
+With `max = 4`, the fourth retry would wait 8000 milliseconds.
+
+### Warning
+
+The count is reset when a retry succeeds.
+
+### Usage example
+
+```tsx
+function useFetchAndRetryMixture(query: Query) {
+  useFetch(query)
+  useRetry(query, { init: 1000, base: 2, max: 3 }) 
+}
+```
+
+### Implementation
+
+```tsx
+export interface RetryOptions {
+  init?: number
+  base?: number
+  max?: number
+}
+
+export function useRetry(query: Query, options: RetryOptions = {}) {
+  const { refetch, error, time } = query
+  const { init = 1000, base = 2, max = 3 } = options
+
+  const count = useRef(0)
+
+  useEffect(() => {
+    count.current = 0
+  }, [refetch])
+
+  useEffect(() => {
+    if (error === undefined) {
+      count.current = 0
+      return
+    }
+
+    if (count.current >= max) return
+    const ratio = base ** count.current
+    const f = () => { count.current++; refetch() }
+    const t = setTimeout(f, init * ratio)
+    return () => clearTimeout(t)
+  }, [error, time, refetch])
+}
+```
+
+### See also
+
+- [useInterval](/features/use-interval) - fetch on a regular interval
+- [useError](/features/use-error) - call a function on error

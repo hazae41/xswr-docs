@@ -1,0 +1,45 @@
+# Using SSR and ISR
+
+You can use `useFallback` to display static or server-side data before the request is finished.
+
+```tsx
+useFallback(query, state) 
+```
+
+### Example
+
+When using a Next.js like component
+
+```tsx
+function useFetchAndFallbackMixture<D>(query: Query<D>, fallback?: State<D>) {
+  useFetch(query)
+  useFallback(query, fallback)
+}
+
+function useHelloMix(data?: MyData) {
+  const query = useQuery(getHelloSchema, [])
+  useFetchAndFallbackMixture(query, { data })
+  return query
+}
+
+function MyPage(props: { data?: MyData }) {
+  const { data, error } = useHelloMix(props.data)
+
+  return <>...</>
+}
+```
+
+### Implementation
+
+```tsx
+export function useFallback<D = any, E = any>(
+  query: Query<D, E>,
+  state?: State<D, E>
+) {
+  const { data, error } = query
+
+  if (data !== undefined) return
+  if (error !== undefined) return
+  Object.assign(query, state)
+}
+```

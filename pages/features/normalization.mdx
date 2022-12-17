@@ -1,0 +1,235 @@
+# Store normalization
+
+Store normalization allows you to have a single source of truth for all your data.
+
+Benefits can be:
+- improved memory usage, because only minimal data is stored
+- preventing extra requests by using a centralized cooldown
+- simplify your code by only using elements instead of containers
+
+XSWR supports any data structure for normalization, with any level of nesting, without any extra dependency.
+
+You can give it an already normalized structure (e.g. with normalizr), or a simple array, or a deeply nested, GraphQL-like data structure with duplicated data everywhere.
+
+It just works!
+
+## Usage 
+
+You just have to define a normalizer function that will take your data and return the same data but normalized.
+
+```tsx
+async function normalizer(data: Data, more: NormalizerMore) {
+  // Do some normalization
+  return { ...data }
+}
+```
+
+You can use `await schema.normalize(data, more)` to recursively normalize a schema with the given data.
+
+```tsx
+async function getDataRef(data: Data | Ref, more: NormalizerMore) {
+  if ("ref" in data) return data // don't normalize a ref
+  const schema = getDataSchema(data.id) // grab the schema of this item
+  await schema.normalize(data, more) // mutate it in storage and apply recursive normalization
+  return { ref: true, id: data.id } as Ref // return a reference to it
+}
+
+async function normalizer(data: Data[], more: NormalizerMore) {
+  async function normalizer(data: Data[], more: NormalizerMore) {
+    return await Promise.all(data.map(it => getDataRef(it, more)))
+  }
+}
+```
+
+# Complete example with an array
+
+We'll use normalization for an array that contains items of type Data, each with an unique id
+
+```tsx
+interface Data {
+  id: string
+  name: string
+}
+```
+
+Let's define a reference to it
+
+```tsx
+interface Ref {
+  ref: true // type checker
+  id: string
+}
+```
+
+First, create a schema factory for an item
+
+```tsx
+function getDataSchema(id: string) {
+  return getSingleSchema<Data>(`/api/data?id=${id}`, fetchAsJson)
+}
+```
+
+Then, create a ref factory for an item
+
+A normal is an object that encapsulates your data, its schema, and a reference to your data (so we can delete the original data and just keep the reference)
+
+```tsx
+async function getDataRef(data: Data | Ref, more: NormalizerMore) {
+  if ("ref" in data) return data // don't normalize a ref
+  const schema = getDataSchema(data.id) // grab the schema of this item
+  await schema.normalize(data, more) // mutate it in storage and apply recursive normalization
+  return { ref: true, id: data.id } as Ref // return a reference to it
+}
+```
+
+Then, create a schema for your container, and create a normalizer, it will return the new structure of your container
+
+In this case, all the array is mapped to normals, which will then automatically be replaced by references by XSWR
+
+```tsx
+function getAllDataSchema() {
+  async function normalizer(data: Data[], more: NormalizerMore) {
+    return await Promise.all(data.map(it => getDataRef(it, more)))
+  }
+
+  return getSingleSchema<(Data | Ref)[]>(
+    `/api/data/all`,
+    fetchAsJson,
+    { normalizer })
+}
+```
+
+Notice the modified type parameter `(Data | Ref)[]`, it means our container can hold both data and references
+
+Then create an element component
+
+```tsx
+function useData(id: string) {
+  return useQuery(getDataSchema, [id])
+}
+
+function Element(props: { id: string }) {
+  const { data } = useData(id)
+
+  return <div>{JSON.stringify(data)}</div>
+}
+```
+
+And a container component
+
+```tsx
+function useAllData() {
+  const query = useQuery(getAllDataSchema, [])
+  useFetch(query)
+  return query
+}
+
+function Container() {
+  const { data } = useAllData()
+
+  return <>
+    {data?.map(dataOrRef =>
+      <Element
+        key={dataOrRef.id}
+        id={dataOrRef.id} />)}
+  </>
+}
+```
+
+That's it! You can find a full working example in the [array test](https://github.com/hazae41/xswr/tree/master/test/next/pages/array)
+
+## Complex example with nested objects and arrays
+
+Start by defining your data, and a normalized version of your data
+
+```tsx
+export interface VideoRef {
+  ref: true
+  id: string
+}
+
+export interface VideoData {
+  id: string
+  title: string
+  author: ProfileData
+  comments: CommentData[]
+}
+
+export interface NormalizedVideoData {
+  id: string
+  title: string
+  author: ProfileRef
+  comments: ProfileRef[]
+}
+````
+
+Then create schema with a normalizer, which will convert all normalizable data into normals
+
+```tsx
+export function getVideoSchema(id: string) {
+  async function normalizer(video: VideoData, more: NormalizerMore) {
+    const author = await getProfileRef(video.author, more) // Object
+    const comments = await Promise.all(video.comments.map(it => getCommentRef(it, more))) // Array
+    return { ...video, author, comments }
+  }
+
+  return getSingleSchema<VideoData | NormalizedVideoData, Error>(
+    `/api/theytube/video?id=${id}`,
+    fetchAsJson,
+    { normalizer })
+}
+```
+
+(Don't forget to put `NormalizedVideoData` in the type parameters)
+
+Since XSWR store normalization is recursive, you can (and should) also define a ref factory for your data
+
+Your video will be able to be contained in larger objects, like a `allVideos` array, or a `videosPerAuthor` mapping
+
+```tsx
+export async function getVideoRef(video: VideoData | VideoRef, more: NormalizerMore) {
+  if ("ref" in video) return video // already a reference
+  const schema = getVideoSchema(video.id)
+  await schema.normalize(video, more)
+  return { ref: true, id: video.id } as VideoRef
+}
+```
+
+You can then create a query
+
+```tsx
+export function useVideo(id: string) {
+  const query = useQuery(getVideoSchema, [id])
+  useFetch(query)
+  return query
+}
+```
+
+And finally, use the normalized version of your data for displaying it
+
+```tsx
+export function Video(props: { id: string }) {
+  const video = useVideo(props.id)
+
+  if (!video.data) return null
+
+  return <div className="p-4 border border-solid border-gray-500">
+    <div className="flex justify-center items-center w-full aspect-video border border-solid border-gray-500">
+      Some video
+    </div>
+    <div className="py-4">
+      <h1 className="text-xl">
+        {video.data.title}
+      </h1>
+      <Profile 
+        id={video.data.author.id} />
+    </div>
+    {video.data.comments.map(dataOrRef =>
+      <Comment 
+        key={dataOrRef.id} 
+        id={dataOrRef.id} />)}
+  </div>
+}
+```
+
+That's it! You can find a full working example in the [theytube test](https://github.com/hazae41/xswr/tree/master/test/next/pages/theytube)

@@ -1,0 +1,56 @@
+# Centralizing resources
+
+If you use a resource multiple times, you should definitely put it in a central place.
+
+`/hooks/hello.tsx`
+
+```tsx
+function getHelloSchema() {
+  return getSingleSchema<Hello>("/api/hello", fetchAsJson)
+}
+
+function useHelloMix() {
+  const query = useQuery(getHelloSchema, [])
+  useAutoFetchMixture(query)
+  return query
+}
+```
+
+Then use it in your components
+
+`/comps/mypage.tsx`
+
+```tsx
+import { useHello } from "hooks/hello.tsx"
+
+export function MyPage() {
+  const { data, error, loading } = useHello()
+
+  // Do some stuff
+
+  if (error)
+    return <Error error={error} />
+  if (!data)
+    return <Loading />
+  return <>{JSON.stringify(data)}</>
+}
+```
+
+`/comps/mycard.tsx`
+
+```tsx
+import { useHello } from "hooks/hello.tsx"
+
+export function MyCard() {
+  const { data, error, loading } = useHello()
+
+  // Do some other stuff
+
+  if (error)
+    return <Error error={error} />
+  if (loading)
+    return <Loading />
+  return <>{JSON.stringify(data)}</>
+}
+```
+

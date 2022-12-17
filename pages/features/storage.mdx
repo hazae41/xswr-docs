@@ -1,0 +1,103 @@
+# Persistent storage
+
+You can create a persistent storage and use it only where you want.
+
+## Creating a storage
+
+Create a storage either at top-level...
+
+```tsx
+import { Storage } from "@hazae41/storage"
+
+const storage = new IDBStorage("mydb")
+
+function getHelloSchema(storage?: Storage) {
+  return getSingleSchema<Hello>("/api/hello", fetchAsJson, { storage })
+}
+
+function useHelloMix() {
+  const query = useQuery(getHelloSchema, [storage])
+  useAutoFetchMixture(query)
+  return query
+}
+```
+
+...or using a hook.
+
+```tsx
+import { Storage } from "@hazae41/storage"
+
+function getHelloSchema(storage?: Storage) {
+  return getSingleSchema("/api/hello", fetchAsJson, { storage })
+}
+
+function useHelloMix() {
+  const storage = useIDBStorage("mydb")
+  const query = useQuery(getHelloSchema, [storage])
+  useAutoFetchMixture(query)
+  return query
+}
+```
+
+You can also pass it into a CoreProvider to enable persistent storage for all children.
+
+```tsx
+const storage = new IDBStorage("mydb")
+
+function MyWrapper() {
+  return <XSWR.CoreProvider
+    storage={storage}>
+    <MyApp />
+  </XSWR.CoreProvider>
+}
+```
+
+## Types of storage
+
+### IDBStorage
+
+- Constructor: `new IDBStorage(name)`
+- Hook (static): `useIDBStorage(name)`
+
+This storage is asynchronous and uses the browser IndexedDB.
+
+IDBStorage is the best storage you can use:
+- it's compatible with SSR
+- it can store very large objects with complex graphs
+- it doesn't need a serializer
+
+Warning: Being asynchronous allows the use of SSR, but it won't display data on first render.
+
+If you want to display data on first render, you can do so by using either:
+- SyncLocalStorage
+- useFallback()
+
+### AsyncLocalStorage
+
+- Constructor: `new AsyncLocalStorage(prefix?, serializer?)`
+- Hook (static): `useAsyncLocalStorage(prefix?, serializer?)`
+
+This storage is asynchronous and uses the browser LocalStorage.
+
+Being asynchronous allows the use of SSR, but it won't display data on first render.
+
+If you want to display data on first render, you can do so by using either:
+- SyncLocalStorage
+- useFallback()
+
+You can set a custom prefix for all keys, by default it's `xswr:`.
+
+You can pass a custom serializer (default is JSON) for serializing values (keys are already serialized by the `Params` serializer).
+
+### SyncLocalStorage
+
+- Constructor: `new SyncLocalStorage(prefix?, serializer?)`
+- Hook (static): `useSyncLocalStorage(prefix?, serializer?)`
+
+This storage is synchronous and uses the browser LocalStorage.
+
+Being synchronous allows displaying data on first render, but it won't work with SSR.
+
+You can set a custom prefix for all keys, by default it's `xswr:`.
+
+You can pass a custom serializer (default is JSON) for serializing values (keys are already serialized by the `Params` serializer).

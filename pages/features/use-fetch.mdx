@@ -1,0 +1,35 @@
+# Fetch on mount and on key change
+
+You can use `useFetch` to fetch a resource on mount and on key change.
+
+```tsx
+useFetch(query) 
+```
+
+### Example
+
+```tsx
+function useHello() {
+  const query = useQuery(getHelloSchema, [])
+
+  useFetch(query)
+  return query
+}
+```
+
+### Implementation
+
+```tsx
+export function useFetch(query: Query) {
+  const { fetch } = query
+
+  useEffect(() => {
+    fetch()
+  }, [fetch])
+}
+```
+
+### See also
+
+- [useMount](/features/use-mount) - fetch on mount only
+- [useOnce](/features/use-once) - fetch only once

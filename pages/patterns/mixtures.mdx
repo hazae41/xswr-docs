@@ -1,0 +1,114 @@
+# Mixtures and mixes
+
+You can split your hooks using schemas, mixtures, and mixes in order to better reuse things.
+
+## Bad example ❌
+
+This example is bad because:
+- it duplicates the blocks (useFetch, useVisible, useOnline, useDebug)
+- it duplicates the queries (useSingle)
+
+`cats.tsx`
+
+```tsx
+export function useCatWithAutoFetch(id: string) {
+  const query = useSingleQuery(["/api/cat", id], fetchAsJson)
+
+  useFetch(query)
+  useVisible(query)
+  useOnline(query)
+  return query
+}
+
+export function useCatWithFetchAndDebug(id: string) {
+  const query = useSingleQuery(["/api/cat", id], fetchAsJson)
+
+  useFetch(query)
+  useDebug(query, `cat#${id}`)
+  return query
+}
+```
+
+`dogs.tsx`
+
+```tsx
+export function useDogWithAutoFetch(id: string) {
+  const query = useSingleQuery(["/api/dog", id], fetchAsJson)
+
+  useFetch(query)
+  useVisible(query)
+  useOnline(query)
+  return query
+}
+
+export function useDogWithFetchAndDebug(id: string) {
+  const query = useSingleQuery(["/api/dog", id], fetchAsJson)
+
+  useFetch(query)
+  useDebug(query, `dog#${id}`)
+  return query
+}
+```
+
+## Good example ✅
+
+This example is better because:
+- it reuses the blocks (useFetch, useVisible, useOnline, useDebug) in mixtures
+- it reuses the queries (useSingle) in bases
+- it combines both bases and mixtures in mixes
+- it uses [schemas](/features/schemas)
+
+`mixtures.tsx`
+
+```tsx
+export function useAutoFetchMixture(query: Query) {
+  useFetch(query)
+  useVisible(query)
+  useOnline(query)
+}
+
+export function useFetchAndDebugMixture(query: Query, label: string) {
+  useFetch(query)
+  useDebug(query, label)
+}
+```
+
+`cats.tsx`
+
+```tsx
+export function getCatSchema(id: string) {
+  return getSingleSchema(["/api/cat", id], fetchAsJson)
+}
+
+export function useCatAutoFetchMix(id: string) {
+  const query = useQuery(getCatSchema, [id])
+  useAutoFetchMixture(query)
+  return query
+}
+
+export function useCatFetchAndDebugMix(id: string) {
+  const query = useQuery(getCatSchema, [id])
+  useFetchAndDebugMixture(query, `cat#${id}`)
+  return query
+}
+```
+
+`dogs.tsx`
+
+```tsx
+export function getDogSchema(id: string) {
+  return getSingleSchema(["/api/dog", id], fetchAsJson)
+}
+
+export function useDogAutoFetchMix(id: string) {
+  const query = useQuery(getDogSchema, [id])
+  useAutoFetchMixture(query)
+  return query
+}
+
+export function useDogFetchAndDebugMix(id: string) {
+  const query = useQuery(getDogSchema, [id])
+  useFetchAndDebugMixture(query, `dog#${id}`)
+  return query
+}
+```

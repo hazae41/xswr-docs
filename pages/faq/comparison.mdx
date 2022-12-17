@@ -1,0 +1,145 @@
+# Comparison with other libs
+
+## Prefetching
+
+### xswr
+
+```tsx
+user.fetch()
+```
+
+### swr
+
+```tsx
+mutate('/api/user', fetch('/api/user').then(res => res.json()))
+```
+
+### react-query
+
+```tsx
+await queryClient.prefetchQuery(['user'], fetchUser)
+```
+
+## Optimistic updates
+
+### xswr
+
+```tsx
+document.update(async function* (previous) {
+  yield { data: "My optimistic document" }
+  return await postAsJson("/api/edit", "My document")
+})
+```
+
+### swr
+
+```tsx
+mutate('/api/todos', updateFn(user), { optimisticData: user, rollbackOnError: true })
+```
+
+### react-query
+
+```tsx
+useMutation(updateTodo, {
+  onMutate: async newTodo => {
+    await queryClient.cancelQueries(['todos'])
+    const previousTodos = queryClient.getQueryData(['todos'])
+    queryClient.setQueryData(['todos'], old => [...old, newTodo])
+    return { previousTodos }
+  },
+  onError: (err, newTodo, context) => {
+    queryClient.setQueryData(['todos'], context.previousTodos)
+  },
+  onSettled: () => {
+    queryClient.invalidateQueries(['todos'])
+  },
+})
+```
+
+## Cancellation
+
+### xswr
+
+```tsx
+user.aborter.abort()
+```
+
+### swr
+
+Unsupported.
+
+### react-query
+
+```tsx
+queryClient.cancelQueries(['todos'])
+```
+
+## Garbage collection
+
+### xswr
+
+Global, per-query, and per-fetch expiration time. You can use response headers like `Cache-Control` to set an expiration time.
+
+### swr
+
+Unsupported.
+
+### react-query
+
+Global and per-query expiration time. You can only define an expiration time at global scope or query scope.
+
+## Persistent storage
+
+### xswr
+
+Per-query persistent storage. You can set a query as persistent in its schema. Out of the box support for IndexedDB and LocalStorage.
+
+### swr
+
+Partial support. You have to create your own storage or install third party ones.
+
+### react-query
+
+Global persistent storage. You persist your whole app and define excluded queries using `shouldDehydrateQuery`. You have to install extra dependencies.
+
+## Store normalization
+
+### xswr
+
+Very simple. Out of the box. No dependency needed.
+
+### swr
+
+Unsupported.
+
+### react-query
+
+Unsupported.
+
+## React Suspense
+
+### xswr
+
+Super natural and easy. Doesn't enforce any pattern and doesn't require any configuration. Partially compatible with SSR.
+
+```tsx
+function Component() {
+  const { data, error, suspend } = useData()
+
+  // Throw the error
+  if (error) throw error
+
+  // Fetch and suspend until next state change
+  if (!data) throw suspend()
+
+  return <div>{JSON.stringify(data)}</div>
+}
+```
+
+### swr
+
+Forces you to use an ErrorBoundary. No control over when to throw and when to suspend. Not compatible with SSR.
+
+### react-query
+
+Seems simple at first but you have to use a configuration for it to work like you want. Error cleaning requires even more code. Compatibility with SSR? Unknown.

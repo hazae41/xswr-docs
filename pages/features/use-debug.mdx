@@ -1,0 +1,37 @@
+# Debugging a resource
+
+You can use `useDebug` to log a query in the console when it's updated.
+
+```tsx
+useDebug(query, label)
+```
+
+### Example
+
+```tsx
+function useFetchAndDebugMixture(query: Query, label: string) {
+  useFetch(query)
+  useDebug(query, label)
+}
+
+function useHelloMix() {
+  const query = useQuery(getHelloSchema, [])
+  useFetchAndDebugMixture(query, label)
+  return query
+}
+```
+
+### Implementation
+
+```tsx
+export function useDebug<D = any, E = any>(
+  query: Query<D, E>,
+  label: string
+) {
+  const { time } = query
+
+  useEffect(() => {
+    console.debug(label, query)
+  }, [time])
+}
+```

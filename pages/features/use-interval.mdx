@@ -1,0 +1,45 @@
+# Fetch on a regular interval
+
+You can use `useInterval` to fetch a resource on a regular interval.
+
+```tsx
+useInterval(query, interval) 
+```
+
+### Motivation
+
+You know that some data is regularly updated.
+
+### Example
+
+```tsx
+function useFetchAndIntervalMixture(query: Query, interval: number) {
+  useFetch(query)
+  useInterval(query, interval)
+}
+
+function useHelloMix() {
+  const query = useQuery(getHelloSchema, [])
+  useFetchAndIntervalMixture(query, 1000)
+  return query
+}
+```
+
+### Implementation
+
+```tsx
+export function useInterval(query: Query, interval: number) {
+  const { fetch } = query
+
+  useEffect(() => {
+    if (!interval) return
+    const i = setInterval(fetch, interval)
+    return () => clearInterval(i)
+  }, [fetch, interval])
+}
+```
+
+### See also
+
+- [useFetch](/features/use-fetch) - fetch on mount and on key change
+- [useRetry](/features/use-retry) - retry on error

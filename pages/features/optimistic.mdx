@@ -1,0 +1,109 @@
+# Optimistic updates
+
+When updating a resource (e.g. via POST, PUT or DELETE), xswr can pre-display the result before the fetcher response.
+
+If the fetcher throws an error, xswr will rollback the resource to the previous state.
+
+### Usage
+
+Just use "yield" with your optimistic state, which will be replaced if success or reverted if error
+
+Then use "return" with your final state.
+
+```tsx
+document.update(async function* (previous) {
+  yield { data: "My optimistic document" }
+  return await postAsJson("/api/edit", "My document")
+})
+```
+
+This feature is only available for single queries.
+
+Optimistic updates are fully abortables like any other request, using `query.aborter`.
+
+You can tell wether some state is optimistic by checking `query.optimistic` (boolean).
+
+### Optimistic fetch
+
+You can return nothing in your updater in order to use the schema's fetcher
+
+```tsx
+document.update(async function* () {
+  yield { data: "My optimistic document" }
+  await new Promise(ok => setTimeout(ok, 5000))
+  // no return, will use document.fetcher to get the new state
+})
+```
+
+This is useful when you know the resource will be updated but want to display an optimistic state.
+
+Also, `{ cache: "reload" }` will be passed to the fetcher in order to skip the cache, feel free to pass it to JS fetch, Axios, ... or ignore it
+
+```tsx
+async function fetchAsJson<T>(url: string, more: FetcherMore<T>) {
+  const { signal, cache } = more
+
+  const res = await fetch(url, { signal, cache })
+
+  if (!res.ok) {
+    const error = new Error(await res.text())
+    return { error }
+  }
+
+  const data = await res.json() as T
+  return { data }
+}
+```
+
+### Example 
+
+```tsx
+async function postAsJson<T>(url: string, data: T) {
+  const { data, signal } = more
+
+  const body = data 
+    ? JSON.stringify(data) 
+    : undefined
+  const res = await fetch(url, { method, body, signal })
+  const cooldown = Date.now() + (5 * 1000)
+  const expiration = Date.now() + (10 * 1000)
+
+  if (!res.ok) {
+    const error = new Error(await res.text())
+    return { error, cooldown, expiration }
+  }
+
+  const data = await res.json() as T
+  return { data, cooldown, expiration }
+}
+
+function getHelloSchema() {
+  return getSingleSchema<Hello>("/api/hello", fetchAsJson)
+}
+
+function useHelloMix() {
+  const query = useQuery(getHelloSchema, [])
+  useAutoFetchMixture(query)
+  return query
+}
+
+export function MyApp() {
+  const mydata = useMyData()
+
+  const onUpdateClick = useCallback(async () => {
+    await mydata.update(async function* () {
+      yield { data: { name: "John Doe" } }
+      return await postAsJson("/api/edit", { name: "John Doe" })
+    })
+  }, [mydata.update])
+
+  return <>
+    <div>
+      {JSON.stringify(mydata.data)}
+    </div>
+    <button onClick={onUpdateClick}>
+      Update
+    </button>
+  </>
+}
+```

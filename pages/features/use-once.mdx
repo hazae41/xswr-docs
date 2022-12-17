@@ -1,0 +1,42 @@
+# Fetch only once
+
+You can use `useOnce` to fetch a resource on mount and on key change, but only if there is no data.
+
+```tsx
+useOnce(query) 
+```
+
+### Motivation
+
+You want to get some data once and share it in multiple components.
+
+### Warning
+
+Will still try to fetch if there is an error.
+
+### Example
+
+```tsx
+function useHelloOnce() {
+  const query = useQuery(getHelloSchema, [])
+  useOnce(query)
+  return query
+}
+```
+
+### Implementation
+
+```tsx
+export function useOnce(query: Query) {
+  const { data, fetch } = query
+
+  useEffect(() => {
+    if (data === undefined) fetch()
+  }, [data, fetch])
+}
+```
+
+### See also
+
+- [useFetch](/features/use-fetch) - fetch on mount and on key change
+- [useMount](/features/use-mount) - fetch on mount only

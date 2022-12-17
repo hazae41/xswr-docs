@@ -1,0 +1,35 @@
+# Fetch when the tab is focused
+
+You can use `useVisible` to fetch a resource when the tab is focused.
+
+```tsx
+useVisible(query) 
+```
+
+### Example
+
+```tsx
+function useAutoFetchMixture(query: Query) {
+  useFetch(query)
+  useVisible(query)
+  useOnline(query)
+}
+```
+
+### Implementation
+
+```tsx
+export function useVisible(query: Query) {
+  const { fetch } = query
+
+  useEffect(() => {
+    const f = () => !document.hidden && fetch()
+    document.addEventListener("visibilitychange", f)
+    return () => document.removeEventListener("visibilitychange", f)
+  }, [fetch])
+}
+```
+
+### See also
+
+- [useOnline](/features/use-online) - fetch when the browser becomes online

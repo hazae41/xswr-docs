@@ -1,0 +1,55 @@
+# Schemas and imperative code
+
+You can define a schema for a resource in order to use it in multiple hooks AND make objects from it.
+
+```tsx
+function getCatSchema(id: string) {
+  return getSingleSchema(["/api/cat", id], fetchAsJson)
+}
+```
+
+## Using schemas in hooks 
+
+You can use a schema in a hook with `useQuery(factory, deps)`. 
+
+It works like useMemo, but deps are passed to the factory.
+
+```tsx
+function useCat(id: string) {
+  const query = useQuery(getCatSchema, [id])
+  useAutoFetchMixture(query)
+  return query
+}
+```
+
+## Making objects from schemas
+
+You can also instanciate a schema in order to fetch or mutate it.
+
+You can either call `schema.make(core, params)` from non-React world.
+
+```tsx
+function mutateSomeCat(id: string, core: Core, params: Params) {
+  const cat = getCatSchema(id).make(core, params)
+  await cat.mutate(() => ({ data: "hello world" }))
+  await cat.fetch()
+}
+```
+
+Or use `useXSWR().make(schema)` from a component to pass `core` and `params` automatically.
+
+```tsx
+function SomeButton() {
+  const { make } = useXSWR()
+
+  const doSomething = useCallback(async () => {
+    const cat = make(getCatSchema("123"))
+    await cat.mutate(() => ({ data: "hello world" }))
+    await cat.fetch()
+  }, [make])
+
+  return <button onClick={doSomething}>
+    Click me
+  </button>
+}
+```
