@@ -29,6 +29,8 @@ It also returns an error if the request failed.
 Using schemas may seems boilerplate, but it will save you a lot of time later.
 
 ```tsx
+import { getSingleSchema } from '@hazae41/xswr';
+
 function getHelloSchema() {
   return getSingleSchema<Hello>("/api/hello", fetchAsJson)
 }
@@ -41,6 +43,8 @@ It allows you to reuse the same set of key+fetcher+params in multiple places, in
 The mixtures pattern allows you to reuse the same group of blocks.
 
 ```tsx
+import { useFetch, useVisible, useOnline } from '@hazae41/xswr';
+
 function useAutoFetchMixture(query: Query) {
   useFetch(query)
   useVisible(query)
@@ -53,6 +57,8 @@ function useAutoFetchMixture(query: Query) {
 Once you got a schema and a mixture, you just have to mix it.
 
 ```tsx
+import { useQuery, useAutoFetchMixture } from '@hazae41/xswr';
+
 function useHelloMix() {
   const query = useQuery(getHelloSchema, [])
   useAutoFetchMixture(query)

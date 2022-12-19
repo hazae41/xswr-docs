@@ -9,9 +9,13 @@ npm i @hazae41/xswr
 Then, wrap your app in a `XSWR.CoreProvider` component.
 
 ```tsx
+import { CoreProvider } from '@hazae41/xswr';
+
 function MyWrapper() {
-  return <XSWR.CoreProvider>
-    <MyAwesomeApp />
-  </XSWR.CoreProvider>
+  return (
+    <XSWR.CoreProvider>
+      <MyAwesomeApp />
+    </XSWR.CoreProvider>
+  )
 }
 ```
