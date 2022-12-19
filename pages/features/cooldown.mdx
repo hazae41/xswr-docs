@@ -16,10 +16,11 @@ You can set a cooldown delay for all resources in your core provider.
 
 ```tsx
 function MyWrapper() {
-  return <XSWR.CoreProvider
-    cooldown={5000}>
-    <MyAwesomeApp />
-  </XSWR.CoreProvider>
+  return (
+    <CoreProvider cooldown={5000}>
+      <MyAwesomeApp />
+    </CoreProvider>
+  )
 }
 ```
 

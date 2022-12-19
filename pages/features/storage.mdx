@@ -45,10 +45,11 @@ You can also pass it into a CoreProvider to enable persistent storage for all ch
 const storage = new IDBStorage("mydb")
 
 function MyWrapper() {
-  return <XSWR.CoreProvider
-    storage={storage}>
-    <MyApp />
-  </XSWR.CoreProvider>
+  return (
+    <CoreProvider storage={storage}>
+      <MyApp />
+    </CoreProvider>
+  )
 }
 ```
 

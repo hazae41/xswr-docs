@@ -14,10 +14,11 @@ You can set an expiration delay for all resources in your core provider.
 
 ```tsx
 function MyWrapper() {
-  return <XSWR.CoreProvider
-    expiration={60 * 1000}>
-    <MyAwesomeApp />
-  </XSWR.CoreProvider>
+  return (
+    <CoreProvider expiration={60 * 1000}>
+      <MyAwesomeApp />
+    </CoreProvider>
+  )
 }
 ```
 
