@@ -29,15 +29,15 @@ You can use `await schema.normalize(data, more)` to recursively normalize a sche
 ```tsx
 async function getDataRef(data: Data | Ref, more: NormalizerMore) {
   if ("ref" in data) return data // don't normalize a ref
+
   const schema = getDataSchema(data.id) // grab the schema of this item
   await schema.normalize(data, more) // mutate it in storage and apply recursive normalization
+
   return { ref: true, id: data.id } as Ref // return a reference to it
 }
 
 async function normalizer(data: Data[], more: NormalizerMore) {
-  async function normalizer(data: Data[], more: NormalizerMore) {
-    return await Promise.all(data.map(it => getDataRef(it, more)))
-  }
+  return await Promise.all(data.map(it => getDataRef(it, more)))
 }
 ```
 
@@ -76,8 +76,10 @@ A normal is an object that encapsulates your data, its schema, and a reference t
 ```tsx
 async function getDataRef(data: Data | Ref, more: NormalizerMore) {
   if ("ref" in data) return data // don't normalize a ref
+  
   const schema = getDataSchema(data.id) // grab the schema of this item
   await schema.normalize(data, more) // mutate it in storage and apply recursive normalization
+
   return { ref: true, id: data.id } as Ref // return a reference to it
 }
 ```
@@ -136,7 +138,7 @@ function Container() {
 }
 ```
 
-That's it! You can find a full working example in the [array test](https://github.com/hazae41/xswr/tree/master/test/next/pages/array)
+That's it! You can find a full working example in the [array test](https://codesandbox.io/p/github/hazae41/xswr-example-next)
 
 ## Complex example with nested objects and arrays
 
@@ -173,7 +175,7 @@ export function getVideoSchema(id: string) {
     return { ...video, author, comments }
   }
 
-  return getSingleSchema<VideoData | NormalizedVideoData, Error>(
+  return getSingleSchema<VideoData | NormalizedVideoData>(
     `/api/theytube/video?id=${id}`,
     fetchAsJson,
     { normalizer })
@@ -189,8 +191,10 @@ Your video will be able to be contained in larger objects, like a `allVideos` ar
 ```tsx
 export async function getVideoRef(video: VideoData | VideoRef, more: NormalizerMore) {
   if ("ref" in video) return video // already a reference
+
   const schema = getVideoSchema(video.id)
   await schema.normalize(video, more)
+  
   return { ref: true, id: video.id } as VideoRef
 }
 ```
@@ -232,4 +236,4 @@ export function Video(props: { id: string }) {
 }
 ```
 
-That's it! You can find a full working example in the [theytube test](https://github.com/hazae41/xswr/tree/master/test/next/pages/theytube)
+That's it! You can find a full working example in the [theytube test](https://codesandbox.io/p/github/hazae41/xswr-example-next)

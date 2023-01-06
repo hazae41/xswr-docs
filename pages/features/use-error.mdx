@@ -22,9 +22,9 @@ function useFetchAndLogErrorMixture(query: Query) {
 ### Implementation
 
 ```tsx
-export function useError<D = any, E = any>(
-  query: Query<D, E>,
-  callback: (e: E) => void
+export function useError(
+  query: Query,
+  callback: (e: unknown) => void
 ) {
   const { error } = query
 

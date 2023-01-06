@@ -24,8 +24,8 @@ function useHelloMix() {
 ### Implementation
 
 ```tsx
-export function useDebug<D = any, E = any>(
-  query: Query<D, E>,
+export function useDebug(
+  query: Query,
   label: string
 ) {
   const { time } = query

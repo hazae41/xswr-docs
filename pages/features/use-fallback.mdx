@@ -32,9 +32,9 @@ function MyPage(props: { data?: MyData }) {
 ### Implementation
 
 ```tsx
-export function useFallback<D = any, E = any>(
-  query: Query<D, E>,
-  state?: State<D, E>
+export function useFallback<D = any>(
+  query: Query<D>,
+  state?: State<D>
 ) {
   const { data, error } = query
 
