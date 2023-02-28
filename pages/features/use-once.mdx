@@ -18,7 +18,7 @@ Will still try to fetch if there is an error.
 
 ```tsx
 function useHelloOnce() {
-  const query = useQuery(getHelloSchema, [])
+  const query = useSchema(getHelloSchema, [])
   useOnce(query)
   return query
 }

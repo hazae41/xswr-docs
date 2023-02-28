@@ -16,7 +16,7 @@ function getHelloSchema(storage?: Storage) {
 }
 
 function useHelloMix() {
-  const query = useQuery(getHelloSchema, [storage])
+  const query = useSchema(getHelloSchema, [storage])
   useAutoFetchMixture(query)
   return query
 }
@@ -33,7 +33,7 @@ function getHelloSchema(storage?: Storage) {
 
 function useHelloMix() {
   const storage = useIDBStorage("mydb")
-  const query = useQuery(getHelloSchema, [storage])
+  const query = useSchema(getHelloSchema, [storage])
   useAutoFetchMixture(query)
   return query
 }

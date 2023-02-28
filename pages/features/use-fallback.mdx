@@ -17,7 +17,7 @@ function useFetchAndFallbackMixture<D>(query: Query<D>, fallback?: State<D>) {
 }
 
 function useHelloMix(data?: MyData) {
-  const query = useQuery(getHelloSchema, [])
+  const query = useSchema(getHelloSchema, [])
   useFetchAndFallbackMixture(query, { data })
   return query
 }

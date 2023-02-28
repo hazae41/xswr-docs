@@ -70,7 +70,7 @@ You can combine `suspend()` with `useFallback`
 
 ```tsx
 function useData(data?: Data) {
-  const query = useQuery(getDataSchema, [])
+  const query = useSchema(getDataSchema, [])
   useFallback(query, { data })
   return query
 }

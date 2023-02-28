@@ -40,7 +40,7 @@ function getHelloSchema() {
 }
 
 function useHello() {
-  const query = useQuery(getHelloSchema, [])
+  const query = useSchema(getHelloSchema, [])
   useFetch(query) // <-- all blocks are compatible
   return query
 }

@@ -10,13 +10,13 @@ function getCatSchema(id: string) {
 
 ## Using schemas in hooks 
 
-You can use a schema in a hook with `useQuery(factory, deps)`. 
+You can use a schema in a hook with `useSchema(factory, deps)`. 
 
 It works like useMemo, but deps are passed to the factory.
 
 ```tsx
 function useCat(id: string) {
-  const query = useQuery(getCatSchema, [id])
+  const query = useSchema(getCatSchema, [id])
   useAutoFetchMixture(query)
   return query
 }

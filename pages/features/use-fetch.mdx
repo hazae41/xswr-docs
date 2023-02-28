@@ -10,7 +10,7 @@ useFetch(query)
 
 ```tsx
 function useHello() {
-  const query = useQuery(getHelloSchema, [])
+  const query = useSchema(getHelloSchema, [])
 
   useFetch(query)
   return query

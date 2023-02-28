@@ -19,7 +19,7 @@ function useFetchAndIntervalMixture(query: Query, interval: number) {
 }
 
 function useHelloMix() {
-  const query = useQuery(getHelloSchema, [])
+  const query = useSchema(getHelloSchema, [])
   useFetchAndIntervalMixture(query, 1000)
   return query
 }

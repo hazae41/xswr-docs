@@ -21,10 +21,10 @@ async function fetchAsJson<T>(url: string) {
 Then create a mix using a query and some blocks.
 
 ```tsx
-import { useSingleQuery } from '@hazae41/xswr';
+import { useQuery } from '@hazae41/xswr';
 
 function useHello() {
-  const query = useSingleQuery<Hello>(`/api/hello`, fetchAsJson)
+  const query = useQuery<Hello>(`/api/hello`, fetchAsJson)
   
   useFetch(query) // Fetch on mount and on url change
   useVisible(query) // Fetch when the page becomes visible

@@ -15,7 +15,7 @@ function useFetchAndDebugMixture(query: Query, label: string) {
 }
 
 function useHelloMix() {
-  const query = useQuery(getHelloSchema, [])
+  const query = useSchema(getHelloSchema, [])
   useFetchAndDebugMixture(query, label)
   return query
 }

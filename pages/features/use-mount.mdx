@@ -18,7 +18,7 @@ Won't fetch on key change, see [useFetch](/features/use-fetch) for doing so.
 
 ```tsx
 function useHelloMount() {
-  const query = useQuery(getHelloSchema, [])
+  const query = useSchema(getHelloSchema, [])
 
   useMount(query)
   return query

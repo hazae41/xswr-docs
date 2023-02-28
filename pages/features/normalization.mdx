@@ -107,7 +107,7 @@ Then create an element component
 
 ```tsx
 function useData(id: string) {
-  return useQuery(getDataSchema, [id])
+  return useSchema(getDataSchema, [id])
 }
 
 function Element(props: { id: string }) {
@@ -121,7 +121,7 @@ And a container component
 
 ```tsx
 function useAllData() {
-  const query = useQuery(getAllDataSchema, [])
+  const query = useSchema(getAllDataSchema, [])
   useFetch(query)
   return query
 }
@@ -203,7 +203,7 @@ You can then create a query
 
 ```tsx
 export function useVideo(id: string) {
-  const query = useQuery(getVideoSchema, [id])
+  const query = useSchema(getVideoSchema, [id])
   useFetch(query)
   return query
 }

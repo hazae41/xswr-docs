@@ -82,7 +82,7 @@ function getHelloSchema() {
 }
 
 function useHelloMix() {
-  const query = useQuery(getHelloSchema, [])
+  const query = useSchema(getHelloSchema, [])
   useAutoFetchMixture(query)
   return query
 }

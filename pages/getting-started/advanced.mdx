@@ -57,10 +57,10 @@ function useAutoFetchMixture(query: Query) {
 Once you got a schema and a mixture, you just have to mix it.
 
 ```tsx
-import { useQuery, useAutoFetchMixture } from '@hazae41/xswr';
+import { useSchema, useAutoFetchMixture } from '@hazae41/xswr';
 
 function useHelloMix() {
-  const query = useQuery(getHelloSchema, [])
+  const query = useSchema(getHelloSchema, [])
   useAutoFetchMixture(query)
   return query
 }

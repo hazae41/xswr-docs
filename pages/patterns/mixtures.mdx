@@ -12,7 +12,7 @@ This example is bad because:
 
 ```tsx
 export function useCatWithAutoFetch(id: string) {
-  const query = useSingleQuery(["/api/cat", id], fetchAsJson)
+  const query = useQuery(["/api/cat", id], fetchAsJson)
 
   useFetch(query)
   useVisible(query)
@@ -21,7 +21,7 @@ export function useCatWithAutoFetch(id: string) {
 }
 
 export function useCatWithFetchAndDebug(id: string) {
-  const query = useSingleQuery(["/api/cat", id], fetchAsJson)
+  const query = useQuery(["/api/cat", id], fetchAsJson)
 
   useFetch(query)
   useDebug(query, `cat#${id}`)
@@ -33,7 +33,7 @@ export function useCatWithFetchAndDebug(id: string) {
 
 ```tsx
 export function useDogWithAutoFetch(id: string) {
-  const query = useSingleQuery(["/api/dog", id], fetchAsJson)
+  const query = useQuery(["/api/dog", id], fetchAsJson)
 
   useFetch(query)
   useVisible(query)
@@ -42,7 +42,7 @@ export function useDogWithAutoFetch(id: string) {
 }
 
 export function useDogWithFetchAndDebug(id: string) {
-  const query = useSingleQuery(["/api/dog", id], fetchAsJson)
+  const query = useQuery(["/api/dog", id], fetchAsJson)
 
   useFetch(query)
   useDebug(query, `dog#${id}`)
@@ -81,13 +81,13 @@ export function getCatSchema(id: string) {
 }
 
 export function useCatAutoFetchMix(id: string) {
-  const query = useQuery(getCatSchema, [id])
+  const query = useSchema(getCatSchema, [id])
   useAutoFetchMixture(query)
   return query
 }
 
 export function useCatFetchAndDebugMix(id: string) {
-  const query = useQuery(getCatSchema, [id])
+  const query = useSchema(getCatSchema, [id])
   useFetchAndDebugMixture(query, `cat#${id}`)
   return query
 }
@@ -101,13 +101,13 @@ export function getDogSchema(id: string) {
 }
 
 export function useDogAutoFetchMix(id: string) {
-  const query = useQuery(getDogSchema, [id])
+  const query = useSchema(getDogSchema, [id])
   useAutoFetchMixture(query)
   return query
 }
 
 export function useDogFetchAndDebugMix(id: string) {
-  const query = useQuery(getDogSchema, [id])
+  const query = useSchema(getDogSchema, [id])
   useFetchAndDebugMixture(query, `dog#${id}`)
   return query
 }
