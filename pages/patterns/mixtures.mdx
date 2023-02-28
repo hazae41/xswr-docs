@@ -77,7 +77,7 @@ export function useFetchAndDebugMixture(query: Query, label: string) {
 
 ```tsx
 export function getCatSchema(id: string) {
-  return getSingleSchema(["/api/cat", id], fetchAsJson)
+  return getSchema(["/api/cat", id], fetchAsJson)
 }
 
 export function useCatAutoFetchMix(id: string) {
@@ -97,7 +97,7 @@ export function useCatFetchAndDebugMix(id: string) {
 
 ```tsx
 export function getDogSchema(id: string) {
-  return getSingleSchema(["/api/dog", id], fetchAsJson)
+  return getSchema(["/api/dog", id], fetchAsJson)
 }
 
 export function useDogAutoFetchMix(id: string) {

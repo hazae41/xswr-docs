@@ -6,7 +6,7 @@ If you use a resource multiple times, you should definitely put it in a central 
 
 ```tsx
 function getHelloSchema() {
-  return getSingleSchema<Hello>("/api/hello", fetchAsJson)
+  return getSchema<Hello>("/api/hello", fetchAsJson)
 }
 
 function useHelloMix() {

@@ -65,7 +65,7 @@ First, create a schema factory for an item
 
 ```tsx
 function getDataSchema(id: string) {
-  return getSingleSchema<Data>(`/api/data?id=${id}`, fetchAsJson)
+  return getSchema<Data>(`/api/data?id=${id}`, fetchAsJson)
 }
 ```
 
@@ -94,7 +94,7 @@ function getAllDataSchema() {
     return await Promise.all(data.map(it => getDataRef(it, more)))
   }
 
-  return getSingleSchema<(Data | Ref)[]>(
+  return getSchema<(Data | Ref)[]>(
     `/api/data/all`,
     fetchAsJson,
     { normalizer })
@@ -175,7 +175,7 @@ export function getVideoSchema(id: string) {
     return { ...video, author, comments }
   }
 
-  return getSingleSchema<VideoData | NormalizedVideoData>(
+  return getSchema<VideoData | NormalizedVideoData>(
     `/api/theytube/video?id=${id}`,
     fetchAsJson,
     { normalizer })

@@ -78,7 +78,7 @@ async function postAsJson<T>(url: string, data: T) {
 }
 
 function getHelloSchema() {
-  return getSingleSchema<Hello>("/api/hello", fetchAsJson)
+  return getSchema<Hello>("/api/hello", fetchAsJson)
 }
 
 function useHelloMix() {

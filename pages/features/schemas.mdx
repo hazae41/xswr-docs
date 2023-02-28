@@ -4,7 +4,7 @@ You can define a schema for a resource in order to use it in multiple hooks AND 
 
 ```tsx
 function getCatSchema(id: string) {
-  return getSingleSchema(["/api/cat", id], fetchAsJson)
+  return getSchema(["/api/cat", id], fetchAsJson)
 }
 ```
 

@@ -26,7 +26,7 @@ Or you can set an expiration delay for some resource.
 
 ```tsx
 function getHelloSchema() {
-  return getSingleSchema<Hello>("/api/hello", fetchAsJson, { expiration: 60 * 1000 })
+  return getSchema<Hello>("/api/hello", fetchAsJson, { expiration: 60 * 1000 })
 }
 ```
 

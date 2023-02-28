@@ -28,7 +28,7 @@ Or you can set a cooldown delay for some resource.
 
 ```tsx
 function getHelloSchema() {
-  return getSingleSchema<Hello>("/api/hello", fetchAsJson, { cooldown: 5000 })
+  return getSchema<Hello>("/api/hello", fetchAsJson, { cooldown: 5000 })
 }
 ```
 

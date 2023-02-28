@@ -29,10 +29,10 @@ It also returns an error if the request failed.
 Using schemas may seems boilerplate, but it will save you a lot of time later.
 
 ```tsx
-import { getSingleSchema } from '@hazae41/xswr';
+import { getSchema } from '@hazae41/xswr';
 
 function getHelloSchema() {
-  return getSingleSchema<Hello>("/api/hello", fetchAsJson)
+  return getSchema<Hello>("/api/hello", fetchAsJson)
 }
 ```
 

@@ -12,7 +12,7 @@ import { Storage } from "@hazae41/storage"
 const storage = new IDBStorage("mydb")
 
 function getHelloSchema(storage?: Storage) {
-  return getSingleSchema<Hello>("/api/hello", fetchAsJson, { storage })
+  return getSchema<Hello>("/api/hello", fetchAsJson, { storage })
 }
 
 function useHelloMix() {
@@ -28,7 +28,7 @@ function useHelloMix() {
 import { Storage } from "@hazae41/storage"
 
 function getHelloSchema(storage?: Storage) {
-  return getSingleSchema("/api/hello", fetchAsJson, { storage })
+  return getSchema("/api/hello", fetchAsJson, { storage })
 }
 
 function useHelloMix() {
