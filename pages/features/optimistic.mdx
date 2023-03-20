@@ -4,24 +4,129 @@ When updating a resource (e.g. via POST, PUT or DELETE), XSWR can pre-display th
 
 If the fetcher throws an error, XSWR will rollback the resource to the previous state.
 
-### Usage
+This feature is only available for single queries.
 
-Just use "yield" with your optimistic state, which will be replaced if success or reverted if error
+### Basic usage
 
-Then use "return" with your final state.
+Just use "yield" with a function that returns an optimistic state, which will be replaced if success or reverted if error
+
+Then use "return" with your final real state.
 
 ```tsx
-document.update(async function* (previous) {
-  yield { data: "My optimistic document" }
-  return await postAsJson("/api/edit", "My document")
+document.update(async function* () {
+  yield () => ({ data: "My optimistic document" })
+  await new Promise(ok => setTimeout(ok, 1000))
+  yield () => ({ data: "My optimistic document 2" })
+  return await postAsJson("/api/edit", "My real document")
 })
 ```
 
-This feature is only available for single queries.
+More on yielded functions:
+- Yielded functions accept a `previous` arguments, which is the current state of the resource.
+- Yielded functions must return an object that looks like `{ data }`, only `data` is valid for now, other fields are reserved for future use
+- Yielded functions must be idempotent, see next section for explanation
 
-Optimistic updates are fully abortables like any other request, using `query.aborter`.
+### Parallel optimistic updates
+
+You can launch multiple optimistic updates **at the same time** on the same resource.
+
+```tsx
+function onTitleChange(title: string) {
+  document.update(async function* () {
+    yield (previous) => ({ data: { ...previous!.data!, title } })
+    return await postAsJson(document.key, { title })
+  })
+}
+```
+
+```tsx
+function onContentChange(content: string) {
+  document.update(async function* () {
+    yield (previous) => ({ data: { ...previous!.data!, content } })
+    return await postAsJson(document.key, { content })
+  })
+}
+```
+
+This means if you run both updates **at the same time**, you will see both updates **at the same time**.
+
+And if one finishes or reverts before the other, the other will still be applied as they are **fully independent**.
+
+For this to work fine, yielded functions must be **idempotent**, they must give the same result when you call them multiple times.
+
+The example above works fine, because we just override a field, so when called multiple times, it will still give the same result.
+
+For example, when you want to add something to an array, you must either remove it first, or don't add it if it already exists.
+
+Think that each yielded functions **can be called multiple times**, in any order, with or without concurrent optimistic updates.
+
+Here is an example with a resource holding an array, that we will optimistically push to.
+
+```tsx
+interface Item {
+  id: number
+  // whatever
+}
+
+interface Items {
+  items: Item[]
+  // whatever
+}
+
+/**
+ * Idempotent push
+ * We remove item if it already exists, then add it to the end
+ * We could also just return the array as-is if item is already there
+ **/
+function push(array: Item[], item: Item) {
+  return [...array.filter(it => it.id !== item.id), item]
+}
+
+function onItemAdd(item: Item) {
+  items.update(async function* () {
+    yield (previous) => ({ data: { ...previous!.data!, items: push(previous!.data!.items, item) } })
+    return await postAsJson(`/api/items/add`, item)
+  })
+}
+```
+
+Using this, we could run the yielded function multiple times, and item will be added only once.
+
+If your items don't contain an ID, or you want them to be added multiple times when the user does an action multiple times, you can use techniques like generating a nonce for each action, or use the current time millis.
+
+```
+interface Item {
+  // whatever
+}
+
+interface ItemWithNonce {
+  item: Item
+  nonce: number
+}
+
+function push(array: ItemWithNonce[], item: ItemWithNonce) {
+  return [...array.filter(it => it.nonce !== item.nonce), item]
+}
+
+function onItemAdd(item: Item) {
+  const nonce = Date.now() // or a counter
+
+  items.update(async function* () {
+    yield (previous) => ({ data: { ...previous!.data!, items: push(previous!.data!.items, { item, nonce }) } })
+    return await postAsJson(`/api/items/add`, item)
+  })
+}
+```
+
+### Aborting an optimistic update
+
+Optimistic updates are abortables, but you have to pass your own AbortController as it won't appear in `query.aborter`.
+
+### Rendering the UI
 
 You can tell wether some state is optimistic by checking `query.optimistic` (boolean).
+
+So if at least one optimistic update is pending, `query.optimistic` will be `true`.
 
 ### Optimistic fetch
 
@@ -29,9 +134,9 @@ You can return nothing in your updater in order to use the schema's fetcher
 
 ```tsx
 document.update(async function* () {
-  yield { data: "My optimistic document" }
+  yield () => ({ data: "My optimistic document" })
   await new Promise(ok => setTimeout(ok, 5000))
-  // no return, will use document.fetcher to get the new state
+  // no return, will use document.fetcher to fetch the real state
 })
 ```
 
@@ -55,7 +160,7 @@ async function fetchAsJson<T>(url: string, more: FetcherMore<T>) {
 }
 ```
 
-### Example 
+### Full example 
 
 ```tsx
 async function postAsJson<T>(url: string, data: T) {
@@ -64,6 +169,7 @@ async function postAsJson<T>(url: string, data: T) {
   const body = data 
     ? JSON.stringify(data) 
     : undefined
+
   const res = await fetch(url, { method, body, signal })
   const cooldown = Date.now() + (5 * 1000)
   const expiration = Date.now() + (10 * 1000)
@@ -77,29 +183,29 @@ async function postAsJson<T>(url: string, data: T) {
   return { data, cooldown, expiration }
 }
 
-function getHelloSchema() {
+function getHello() {
   return getSchema<Hello>("/api/hello", fetchAsJson)
 }
 
-function useHelloMix() {
-  const query = useSchema(getHelloSchema, [])
+function useHello() {
+  const query = useSchema(getHello, [])
   useAutoFetchMixture(query)
   return query
 }
 
 export function MyApp() {
-  const mydata = useMyData()
+  const hello = useHello()
 
   const onUpdateClick = useCallback(async () => {
-    await mydata.update(async function* () {
-      yield { data: { name: "John Doe" } }
+    await hello.update(async function* () {
+      yield () => ({ data: { name: "John Doe" } })
       return await postAsJson("/api/edit", { name: "John Doe" })
     })
-  }, [mydata.update])
+  }, [hello.update])
 
   return <>
     <div>
-      {JSON.stringify(mydata.data)}
+      {JSON.stringify(hello.data)}
     </div>
     <button onClick={onUpdateClick}>
       Update

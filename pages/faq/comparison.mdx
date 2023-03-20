@@ -24,11 +24,35 @@ await queryClient.prefetchQuery(['user'], fetchUser)
 
 ### @hazae41/xswr
 
+Can use yield to represent fine-grained steps
+
 ```tsx
 document.update(async function* () {
-  yield (previous) => ({ data: "My optimistic document" })
+  yield () => ({ data: "My optimistic document" })
+  await new Promise(ok => setTimeout(ok, 1000))
+  yield () => ({ data: "My optimistic document 2" })
   return await postAsJson("/api/edit", "My real document")
 })
+```
+
+Can run multiple optimistic updates at the same time, in parallel
+
+```tsx
+function onTitleChange(title: string) {
+  document.update(async function* () {
+    yield (previous) => ({ data: { ...previous!.data!, title } })
+    return await postAsJson("/api/edit", { title })
+  })
+}
+```
+
+```tsx
+function onContentChange(content: string) {
+  document.update(async function* () {
+    yield (previous) => ({ data: { ...previous!.data!, content } })
+    return await postAsJson("/api/edit", { content })
+  })
+}
 ```
 
 ### swr
