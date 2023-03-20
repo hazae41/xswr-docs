@@ -2,7 +2,7 @@
 
 ## Prefetching
 
-### xswr
+### @hazae41/xswr
 
 ```tsx
 user.fetch()
@@ -22,12 +22,12 @@ await queryClient.prefetchQuery(['user'], fetchUser)
 
 ## Optimistic updates
 
-### xswr
+### @hazae41/xswr
 
 ```tsx
-document.update(async function* (previous) {
-  yield { data: "My optimistic document" }
-  return await postAsJson("/api/edit", "My document")
+document.update(async function* () {
+  yield (previous) => ({ data: "My optimistic document" })
+  return await postAsJson("/api/edit", "My real document")
 })
 ```
 
@@ -58,7 +58,7 @@ useMutation(updateTodo, {
 
 ## Cancellation
 
-### xswr
+### @hazae41/xswr
 
 ```tsx
 user.aborter.abort()
@@ -76,9 +76,24 @@ queryClient.cancelQueries(['todos'])
 
 ## Garbage collection
 
-### xswr
+### @hazae41/xswr
 
 Global, per-query, and per-fetch expiration time. You can use response headers like `Cache-Control` to set an expiration time.
+
+```tsx
+async function fetcher(url: string) {
+  const res = await fetch(url)
+  const expiration = Expiration.from(res.headers)
+
+  if (!res.ok) {
+    const error = new Error(await res.text())
+    return { error, expiration }
+  }
+
+  const data = await res.json()
+  return { data, expiration }
+}
+```
 
 ### swr
 
@@ -90,9 +105,14 @@ Global and per-query expiration time. You can only define an expiration time at 
 
 ## Persistent storage
 
-### xswr
+### @hazae41/xswr
 
 Per-query persistent storage. You can set a query as persistent in its schema. Out of the box support for IndexedDB and LocalStorage.
+
+```tsx
+const storage = useAsyncLocalStorage()
+const query = useQuery(`/api/hello`, fetcher, { storage })
+```
 
 ### swr
 
@@ -104,9 +124,17 @@ Global persistent storage. You persist your whole app and define excluded querie
 
 ## Store normalization
 
-### xswr
+### @hazae41/xswr
 
 Very simple. Out of the box. No dependency needed.
+
+```tsx
+async function normalizer(data: Data, more: NormalizerMore) {
+  return await Promise.all(data.items.map(item => getItemRef(item)))
+}
+
+const query = useQuery(`/api/`, fetcher, { normalizer })
+```
 
 ### swr
 
@@ -118,7 +146,7 @@ Unsupported.
 
 ## React Suspense
 
-### xswr
+### @hazae41/xswr
 
 Super natural and easy. Doesn't enforce any pattern and doesn't require any configuration. Partially compatible with SSR.
 
