@@ -9,10 +9,10 @@ Create a storage either at top-level...
 ```tsx
 import { Storage } from "@hazae41/storage"
 
-const storage = new IDBStorage("mydb")
+const storage = IDBStorage.create("mydb")
 
 function getHelloSchema(storage?: Storage) {
-  return getSchema<Hello>("/api/hello", fetchAsJson, { storage })
+  return getSchema<Hello>("/api/hello", fetchAsJson, { storage: { storage } })
 }
 
 function useHelloMix() {
@@ -28,7 +28,7 @@ function useHelloMix() {
 import { Storage } from "@hazae41/storage"
 
 function getHelloSchema(storage?: Storage) {
-  return getSchema("/api/hello", fetchAsJson, { storage })
+  return getSchema("/api/hello", fetchAsJson, { storage: { storage } })
 }
 
 function useHelloMix() {
@@ -39,25 +39,11 @@ function useHelloMix() {
 }
 ```
 
-You can also pass it into a CoreProvider to enable persistent storage for all children.
-
-```tsx
-const storage = new IDBStorage("mydb")
-
-function MyWrapper() {
-  return (
-    <CoreProvider storage={storage}>
-      <MyApp />
-    </CoreProvider>
-  )
-}
-```
-
 ## Types of storage
 
 ### IDBStorage
 
-- Constructor: `new IDBStorage(name)`
+- Constructor: `IDBStorage.create(name)`
 - Hook (static): `useIDBStorage(name)`
 
 This storage is asynchronous and uses the browser IndexedDB.
@@ -75,7 +61,7 @@ If you want to display data on first render, you can do so by using either:
 
 ### AsyncLocalStorage
 
-- Constructor: `new AsyncLocalStorage(prefix?, serializer?)`
+- Constructor: `AsyncLocalStorage.create(prefix?, serializer?)`
 - Hook (static): `useAsyncLocalStorage(prefix?, serializer?)`
 
 This storage is asynchronous and uses the browser LocalStorage.
@@ -92,7 +78,7 @@ You can pass a custom serializer (default is JSON) for serializing values (keys 
 
 ### SyncLocalStorage
 
-- Constructor: `new SyncLocalStorage(prefix?, serializer?)`
+- Constructor: `SyncLocalStorage.create(prefix?, serializer?)`
 - Hook (static): `useSyncLocalStorage(prefix?, serializer?)`
 
 This storage is synchronous and uses the browser LocalStorage.
@@ -102,3 +88,134 @@ Being synchronous allows displaying data on first render, but it won't work with
 You can set a custom prefix for all keys, by default it's `xswr:`.
 
 You can pass a custom serializer (default is JSON) for serializing values (keys are already serialized by the `Params` serializer).
+
+## Hashing and encryption
+
+In order to hide sensitive data from being seen in the storage, you can hash keys and encrypt values.
+
+### Using a password
+
+You can easily create a PBKDF2 from a password, with recommended parameters.
+
+```tsx
+import { PBKDF2 } from "@hazae41/xswr" 
+
+const pbkdf2 = await PBKDF2.from(password)
+```
+
+### Hashing keys
+
+You can define a hash function as the key serializer, if the keys contain sensitive data.
+
+#### From a HMAC key
+
+```tsx
+import { HmacEncoder } from "@hazae41/xswr" 
+
+const storage = IDBStorage.create("cache")
+const keySerializer = new HmacEncoder(key)
+
+return { storage, keySerializer }
+```
+
+#### From PBKDF2
+
+You have to generate a public, random, and static salt (Uint8Array), see example below.
+
+```tsx
+import { HmacEncoder } from "@hazae41/xswr" 
+
+const storage = IDBStorage.create("cache")
+const keySerializer = await HmacEncoder.fromPBKDF2(pbkdf2, salt)
+
+return { storage, keySerializer }
+```
+
+### Encrypting values
+
+You can define an encryption function as the value serializer, if the values contain sensitive data.
+
+#### From an AES-256 key
+
+```tsx
+import { AesGcmCoder } from "@hazae41/xswr" 
+
+const storage = IDBStorage.create("cache")
+const valueSerializer = new AesGcmCoder(key)
+
+return { storage, valueSerializer }
+```
+
+#### From PBKDF2
+
+You have to generate a public, random, and static salt (Uint8Array), see example below.
+
+```tsx
+import { AesGcmCoder } from "@hazae41/xswr" 
+
+const storage = IDBStorage.create("cache")
+const valueSerializer = await AesGcmCoder.fromPBKDF2(pbkdf2, salt)
+
+return { storage, valueSerializer }
+```
+
+### Full example of hashing and encryption
+
+This examples use a user-given password and two random salts to store sensitive data, keys are hashed using HMAC-SHA-256 and values are encrypted using AES-256-GCM.
+
+- We use a user-given password as a PBKDF2 seed, it will create hashing and encryption keys from that password.
+- We generate two random salts and we store them, one is for the keys, the other is for the values.
+- We store "/api/hello" in a IndexedDB storage using the hashing and encryption.
+
+```tsx
+/**
+ * Load the salt from localStorage if it exists, else generate a random salt and store it
+ **/
+function getOrCreateSalt(key: string): Uint8Array {
+  const item = localStorage.getItem(key)
+
+  if (item)
+    return Bytes.fromBase64(item)
+
+  const salt = Bytes.random(16)
+  localStorage.setItem(key, Bytes.toBase64(salt))
+  return salt
+}
+
+function useStorage(password?: string) {
+  return useMemo(() => {
+    if (!password) return
+
+    const storage = IDBStorage.create("cache")
+    const pbkdf2 = await PBKDF2.from(password)
+
+    const keySalt = getOrCreateSalt("keySalt")
+    const valueSalt = getOrCreateSalt("valueSalt")
+
+    const keySerializer = await HmacEncoder.fromPBKDF2(pbkdf2, keySalt)
+    const valueSerializer = await AesGcmCoder.fromPBKDF2(pbkdf2, valueSalt)
+
+    return { storage, keySerializer, valueSerializer }
+  }, [password])
+}
+
+function getHello(storage?: StorageQueryParams<any>) {
+  return getSchema<Hello>("/api/hello", fetchAsJson, { storage })
+}
+
+function useHello(storage?: StorageQueryParams<any>) {
+  const query = useSchema(getHello, [storage])
+  useFetch(query)
+  return query
+}
+
+function Page() {
+  const [password, setPassword] = useState<string>()
+
+  const storage = useStorage(password)
+  const { data, error } = useHello(storage)
+
+  ...
+}
+```
+
